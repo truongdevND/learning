@@ -1,16 +1,17 @@
+import { Outlet } from "react-router-dom";
 import Login from "../pages/auth/Login.jsx";
 import Register from "../pages/auth/Register.jsx";
 import NotFound from "../pages/NotFound.jsx";
+
 const authRoutes = [
   {
-    path: "/login",
-    element: <Login />,
+    path: "/",
+    element: <Outlet />,
     errorElement: <NotFound />,
-  },
-  {
-    path: "/register",
-    element: <Register />,
-    errorElement: <NotFound />,
+    children: [
+      { path: "login", element: <Login /> },
+      { path: "register", element: <Register /> },
+    ],
   },
 ];
 
