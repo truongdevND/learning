@@ -30,12 +30,12 @@ const RegisterPage = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-white to-gray-500 p-4">
-      <div className="flex w-full max-w-5xl h-[600px] overflow-hidden bg-white rounded-xl shadow-2xl">
+      <div className="flex w-full max-w-7xl h-[600px] overflow-hidden bg-white rounded-xl shadow-2xl">
         <div className="hidden md:block md:w-2/2 relative">
         <img 
-            src="https://paris-u.edu.vn/wp-content/uploads/2023/02/Article-COVER.png" 
+            src="https://media.istockphoto.com/id/1366428092/vi/anh/h%E1%BB%99i-th%E1%BA%A3o-tr%C3%AAn-web-k%E1%BB%B9-n%C4%83ng-e-learning-k%E1%BB%B9-n%C4%83ng-kinh-doanh-kh%C3%A1i-ni%E1%BB%87m-c%C3%B4ng-ngh%E1%BB%87-internet-%C4%91%C3%A0o-t%E1%BA%A1o-k%E1%BB%B9.jpg?s=612x612&w=0&k=20&c=RVmcoOZ8WkU72SjVMw9NFRDyWyqF6uOGB3-BtH1g38Q=" 
             alt="Login illustration" 
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full "
           />
          
         </div>
