@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Select, Tag, Space, Rate, Empty, Spin, message } from 'antd';
-import { ClockCircleOutlined, UserOutlined } from '@ant-design/icons';
+import { Card, Input, Tag, Space, Rate, Empty, Spin, message, Breadcrumb } from 'antd';
+import { ClockCircleOutlined, UserOutlined, SearchOutlined, HomeOutlined } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
 import courseService from '../../services/courseService';
-const { Option } = Select;
+const { Search } = Input;
 
 const Home = () => {
-  const [filter, setFilter] = useState('all');
   const [courses, setCourses] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [keySearch, setKeySearch] = useState('');
@@ -35,43 +34,45 @@ const Home = () => {
     fetchDataCourse();
   }, [currentPage, keySearch]);
 
-  const categories = [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'web', label: 'Web Development' },
-    { value: 'mobile', label: 'Mobile Development' },
-    { value: 'design', label: 'UI/UX Design' },
-    { value: 'data', label: 'Data Science' },
-    { value: 'devops', label: 'DevOps' }
-  ];
-
-  const filteredCourses = filter === 'all' 
-    ? courses 
-    : courses.filter(course => course.category === filter);
+  const handleSearch = (value) => {
+    setKeySearch(value);
+  };
 
   return (
-    <div>
-      {/* Filter Section */}
+    <div className="container mx-auto px-4 py-6">
+      {/* Breadcrumb */}
+      <Breadcrumb className="mb-6">
+        <Breadcrumb.Item href="/">
+          <HomeOutlined />
+        </Breadcrumb.Item>
+        <Breadcrumb.Item>Courses</Breadcrumb.Item>
+      </Breadcrumb>
+
+      {/* Title */}
       <div className="mb-8">
-        <Select
-          defaultValue="all"
-          style={{ width: 200 }}
-          onChange={setFilter}
-        >
-          {categories.map(category => (
-            <Option key={category.value} value={category.value}>
-              {category.label}
-            </Option>
-          ))}
-        </Select>
+        <h1 className="text-3xl font-bold text-gray-800">Explore Courses</h1>
+        <p className="text-gray-600 mt-2">Discover the latest courses to enhance your skills</p>
+      </div>
+
+      {/* Search Section */}
+      <div className="mb-8">
+        <Search
+          placeholder="Search for courses..."
+          allowClear
+          enterButton={<SearchOutlined />}
+          size="large"
+          onSearch={handleSearch}
+          className="max-w-lg"
+        />
       </div>
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <Spin size="large" tip="Loading courses..." />
         </div>
-      ) : filteredCourses.length > 0 ? (
+      ) : courses.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredCourses.map(course => (
+          {courses.map(course => (
             <div 
               key={course.id}
               className="group relative overflow-hidden rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl"
@@ -109,7 +110,7 @@ const Home = () => {
           <Empty 
             description={
               <span className="text-gray-500">
-                No courses found. Try adjusting your filters or search criteria.
+                No courses found. Try adjusting your search criteria.
               </span>
             }
           />
