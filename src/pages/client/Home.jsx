@@ -8,7 +8,7 @@ const { Option } = Select;
 const Home = () => {
   const [filter, setFilter] = useState('all');
   const [courses, setCourses] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
   const [keySearch, setKeySearch] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
