@@ -138,9 +138,9 @@ const CourseDetail = () => {
                 <span className="text-2xl font-bold text-blue-600">Free</span>
                 <Button type="primary" size="large">Đăng ký học</Button>
               </div>
-              
+
               <Divider />
-              
+
               <div className="space-y-2">
                 <div className="flex items-center">
                   <ClockCircleOutlined className="text-gray-500 mr-2" />

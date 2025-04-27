@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Select, Tag, Space, Rate, Empty, Spin, Tabs, Button } from 'antd';
+import { Card, Select, Tag, Space, Rate, Empty, Spin, Tabs } from 'antd';
 import { ClockCircleOutlined, UserOutlined, CheckCircleOutlined, ClockCircleOutlined as ClockIcon } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
 import courseService from '../../services/courseService';
@@ -78,18 +78,8 @@ const Home = () => {
     ? courses 
     : courses.filter(course => course.category === filter);
 
-  const completedTests = trackingData.filter(item => item.status === 1 && (item.lesson_test || item.course_test));
-  const inProgressTests = trackingData.filter(item => item.status === 0 && (item.lesson_test || item.course_test));
-
-  const handleTestClick = (item) => {
-    if (item.status === 0) {
-      if (item.lesson_test) {
-        navigate(`/course/${item.course?.id}/lesson/${item.lesson?.id}/test/${item.object_id}`);
-      } else if (item.course_test) {
-        navigate(`/course/${item.course?.id}/test/${item.object_id}`);
-      }
-    }
-  };
+  const completedItems = trackingData.filter(item => item.status === 1);
+  const inProgressItems = trackingData.filter(item => item.status === 0);
 
   const renderTrackingItem = (item) => {
     const isCourse = item.course_test;
@@ -105,7 +95,7 @@ const Home = () => {
             <p className="text-gray-600">{description}</p>
             <div className="mt-2">
               <Tag color={item.status === 1 ? 'success' : 'processing'}>
-                {item.status === 1 ? 'Đã hoàn thành' : 'Đang thi'}
+                {item.status === 1 ? 'Hoàn thành' : 'Đang học'}
               </Tag>
               {item.status === 1 && (
                 <Tag color="blue" className="ml-2">
@@ -114,19 +104,9 @@ const Home = () => {
               )}
             </div>
           </div>
-          <div className="flex flex-col items-end">
-            <div className="text-gray-500 text-sm mb-2">
-              <ClockIcon className="mr-1" />
-              {new Date(item.created_at).toLocaleDateString()}
-            </div>
-            {item.status === 0 && (
-              <Button 
-                type="primary" 
-                onClick={() => handleTestClick(item)}
-              >
-                Tiếp tục thi
-              </Button>
-            )}
+          <div className="text-gray-500 text-sm">
+            <ClockIcon className="mr-1" />
+            {new Date(item.created_at).toLocaleDateString()}
           </div>
         </div>
       </Card>
@@ -149,6 +129,8 @@ const Home = () => {
           ))}
         </Select>
       </div>
+
+    
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
@@ -200,22 +182,21 @@ const Home = () => {
           />
         </div>
       )}
-
-      {isLoggedIn && (
+        {isLoggedIn && (
         <div className="mt-8">
           <Tabs defaultActiveKey="1">
-            <TabPane tab="Bài thi đang làm" key="1">
-              {inProgressTests.length > 0 ? (
-                inProgressTests.map(renderTrackingItem)
+            <TabPane tab="Khóa học đang học" key="1">
+              {inProgressItems.length > 0 ? (
+                inProgressItems.map(renderTrackingItem)
               ) : (
-                <Empty description="Bạn chưa có bài thi nào đang làm" />
+                <Empty description="Bạn chưa có khóa học nào đang học" />
               )}
             </TabPane>
-            <TabPane tab="Bài thi đã hoàn thành" key="2">
-              {completedTests.length > 0 ? (
-                completedTests.map(renderTrackingItem)
+            <TabPane tab="Khóa học đã hoàn thành" key="2">
+              {completedItems.length > 0 ? (
+                completedItems.map(renderTrackingItem)
               ) : (
-                <Empty description="Bạn chưa hoàn thành bài thi nào" />
+                <Empty description="Bạn chưa hoàn thành khóa học nào" />
               )}
             </TabPane>
           </Tabs>

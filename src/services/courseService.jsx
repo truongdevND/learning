@@ -4,12 +4,12 @@ const courseService = {
   // Get all courses
   getCourses: async (param) => {
     try {
-      const { page = 0, pageSize = 10 } = param || {};
-      const response = await api.get(`api/courses?page=${page}&pageSize=${pageSize}`);
+      const { page = 0, pageSize = 10, key } = param || {};
+      const response = await api.get(`api/courses?page=${page}&pageSize=${pageSize}&key=${key}`);
       return response;
     } catch (error) {
       console.error(error);
-    }
+    } 
   },
 
   // Get a specific course by ID
