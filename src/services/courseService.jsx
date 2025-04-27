@@ -21,8 +21,32 @@ const courseService = {
       console.error(error);
     }
   },
+  createMedia: async (data) => {
+    try {
+      const response = await api.get(`/api/media` ,data);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  },
+  getMedia: async (link) => {
+    try {
+      const response = await api.get(`/api/media/${link}`);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  },
 
-  // Create a new course
+getLessonTest:async (link) => {
+  try {
+    const response = await api.get(`/api/media/${link}`);
+    return response;
+  } catch (error) {
+    console.error(error);
+  }
+},
+
   createCourse: async (courseData) => {
     try {
       const response = await api.post('/api/courses', courseData);

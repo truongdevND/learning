@@ -1,38 +1,47 @@
-import React, { useState } from 'react';
-import { Menu, Button, Dropdown, Input, Badge, Avatar } from 'antd';
-import { 
-  MenuOutlined, 
-  SearchOutlined, 
-  BellOutlined, 
-  ShoppingCartOutlined, 
-  UserOutlined, 
-  DownOutlined
-} from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Menu, Dropdown, Input, Avatar, Button } from 'antd';
+import { UserOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 
 const { Search } = Input;
 
 const Header = () => {
-  const [visible, setVisible] = useState(false);
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
-  const menu = (
-    <Menu>
-      <Menu.Item key="1">Trang chủ</Menu.Item>
-      <Menu.Item key="2">Sản phẩm</Menu.Item>
-      <Menu.Item key="3">Dịch vụ</Menu.Item>
-      <Menu.Item key="4">Giới thiệu</Menu.Item>
-      <Menu.Item key="5">Liên hệ</Menu.Item>
-    </Menu>
-  );
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error('Error parsing user data from localStorage:', error);
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user'); 
+    setUser(null); 
+    navigate("/login");
+  };
 
   const userMenu = (
     <Menu>
       <Menu.Item key="1">Thông tin tài khoản</Menu.Item>
-      <Menu.Item key="2">Đơn hàng của tôi</Menu.Item>
-      <Menu.Item key="3">Cài đặt</Menu.Item>
       <Menu.Divider />
-      <Menu.Item key="4">Đăng xuất</Menu.Item>
+      <Menu.Item key="4" onClick={handleLogout}>Đăng xuất</Menu.Item>
     </Menu>
   );
+
+  const handleLogin = () => {
+    navigate("/login");
+  };
+
+  const handleRegister = () => {
+    navigate("/register");
+  };
 
   return (
     <header className="w-full bg-white shadow-md py-4 px-6">
@@ -40,47 +49,39 @@ const Header = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <div className="mr-6">
-              <a href="/" className="text-2xl font-bold text-blue-600">MyWebsite</a>
+              <a href="/" className="text-2xl font-bold text-blue-600">
+                Hệ thống đào tạo
+              </a>
             </div>
-            <div className="hidden md:block">
-              <nav className="flex space-x-6">
-                <a href="/" className="text-gray-800 hover:text-blue-600 font-medium">Trang chủ</a>
-                <a href="/products" className="text-gray-800 hover:text-blue-600 font-medium">Sản phẩm</a>
-                <a href="/services" className="text-gray-800 hover:text-blue-600 font-medium">Dịch vụ</a>
-                <a href="/about" className="text-gray-800 hover:text-blue-600 font-medium">Giới thiệu</a>
-                <a href="/contact" className="text-gray-800 hover:text-blue-600 font-medium">Liên hệ</a>
-              </nav>
-            </div>
-            <div className="md:hidden">
-              <Dropdown overlay={menu} trigger={['click']}>
-                <Button type="text" icon={<MenuOutlined />} onClick={() => setVisible(!visible)} />
-              </Dropdown>
+            <div className="">
+              <Search
+                placeholder="Tìm kiếm..."
+                onSearch={(value) => console.log(value)}
+                style={{ maxWidth: '500px' }}
+              />
             </div>
           </div>
 
-          {/* Search, notifications, cart, user */}
           <div className="flex items-center space-x-4">
-            <div className="hidden sm:block">
-              <Search
-                placeholder="Tìm kiếm..."
-                onSearch={value => console.log(value)}
-                style={{ width: 200 }}
-              />
-            </div>                                     
-            <div className="sm:hidden flex gap-4">
-              <Button type="text" icon={<SearchOutlined />} />
-            </div>
-            <Badge className='mr-4' count={5} size="small">
-              <Button type="text" icon={<BellOutlined />} />
-            </Badge>
-        
-            <Dropdown overlay={userMenu} trigger={['click']}>
-              <div className="flex items-center cursor-pointer">
-                <Avatar icon={<UserOutlined />} />
-                <span className="ml-2 hidden md:inline-block">Người dùng</span>
-                <DownOutlined className="ml-1" />
+            {user ? (
+              <Dropdown overlay={userMenu} trigger={['click']}>
+                <div className="flex items-center cursor-pointer">
+                  <Avatar icon={<UserOutlined />} />
+                  <span className="ml-2 hidden md:inline-block">
+                    {user.email} 
+                  </span>
+                </div>
+              </Dropdown>
+            ) : (
+              <div className="flex items-center gap-4 space-x-2">
+                <Button type="primary" onClick={handleLogin}>
+                  Đăng nhập
+                </Button>
+                <Button onClick={handleRegister}>
+                  Đăng ký
+                </Button>
               </div>
-            </Dropdown>
+            )}
           </div>
         </div>
       </div>

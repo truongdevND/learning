@@ -33,41 +33,13 @@ instance.interceptors.response.use(
 );
 
 const api = {
-  get: async (url, params = {}) => {
-    try {
-      const response = await instance.get(url, { params });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error.message;
-    }
-  },
-
-  post: async (url, data = {}) => {
-    try {
-      const response = await instance.post(url, data);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error.message;
-    }
-  },
-
-  put: async (url, data = {}) => {
-    try {
-      const response = await instance.put(url, data);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error.message;
-    }
-  },
-
-  delete: async (url) => {
-    try {
-      const response = await instance.delete(url);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error.message;
-    }
-  },
+  get: (url, params = {}) => instance.get(url, { params }).then((response) => response.data),
+  
+  post: (url, data = {}) => instance.post(url, data).then((response) => response.data),
+  
+  put: (url, data = {}) => instance.put(url, data).then((response) => response.data),
+  
+  delete: (url) => instance.delete(url).then((response) => response.data),
 };
 
 export default api;

@@ -1,10 +1,10 @@
 import { Outlet } from "react-router-dom";
 import Home from "../pages/client/Home.jsx";
-import Login from "../pages/auth/Login.jsx";
-import Register from "../pages/auth/Register.jsx";
 import NotFound from "../pages/NotFound.jsx";
 import DefaultLayoutClient from "../layouts/DefaultLayoutClient.jsx";
 import CourseDetail from "../pages/client/CourseDetail.jsx";
+import ProtectedRoute from "../components/ProtectedRoute.jsx";
+import LessonTest from "../pages/client/LessonTest.jsx";
 
 const clientRoutes = [
   {
@@ -17,9 +17,22 @@ const clientRoutes = [
     errorElement: <NotFound />,
     children: [
       { index: true, element: <Home /> },
-      { path: "login", element: <Login /> },
-      { path: "register", element: <Register /> },
-      { path: "course/:id", element: <CourseDetail /> },
+      { 
+        path: "course/:id", 
+        element: (
+          <ProtectedRoute>
+            <CourseDetail />
+          </ProtectedRoute>
+        ) 
+      },
+      { 
+        path: "course/:id/lesson/:lessonId/test/:testId", 
+        element: (
+          <ProtectedRoute>
+            <LessonTest />
+          </ProtectedRoute>
+        ) 
+      },
     ],
   },
 ];
