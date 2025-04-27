@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Select, Tag, Space, Rate, Empty, Spin, Tabs } from 'antd';
+import { Card, Tag, Space, Empty, Spin, Tabs, Button, Typography } from 'antd';
 import { ClockCircleOutlined, UserOutlined, CheckCircleOutlined, ClockCircleOutlined as ClockIcon } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
 import courseService from '../../services/courseService';
@@ -8,11 +8,10 @@ import { message } from 'antd';
 import userService from '../../services/userService';
 import authService from '../../services/authService';
 
-const { Option } = Select;
+const { Title } = Typography;
 const { TabPane } = Tabs;
 
 const Home = () => {
-  const [filter, setFilter] = useState('all');
   const [courses, setCourses] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [keySearch, setKeySearch] = useState('');
@@ -65,26 +64,21 @@ const Home = () => {
     fetchDataCourse();
   }, [currentPage, keySearch]);
 
-  const categories = [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'web', label: 'Web Development' },
-    { value: 'mobile', label: 'Mobile Development' },
-    { value: 'design', label: 'UI/UX Design' },
-    { value: 'data', label: 'Data Science' },
-    { value: 'devops', label: 'DevOps' }
-  ];
+  const inProgressTests = trackingData.filter(item => item.status === 0 && (item.lesson_test || item.course_test));
+  const completedTests = trackingData.filter(item => item.status === 1 && (item.lesson_test || item.course_test));
 
-  const filteredCourses = filter === 'all' 
-    ? courses 
-    : courses.filter(course => course.category === filter);
+  const handleTestClick = (item) => {
+    if (item.lesson_test) {
+      navigate(`/course/${item.course?.id}/lesson/${item.lesson?.id}/test/${item.object_id}`);
+    } else if (item.course_test) {
+      navigate(`/course/${item.course?.id}/test/${item.object_id}`);
+    }
+  };
 
-  const completedItems = trackingData.filter(item => item.status === 1);
-  const inProgressItems = trackingData.filter(item => item.status === 0);
-
-  const renderTrackingItem = (item) => {
-    const isCourse = item.course_test;
-    const title = isCourse ? item.course?.course_name : item.lesson?.lesson_name;
-    const description = isCourse ? item.course?.description : item.lesson?.description;
+  const renderTestItem = (item) => {
+    const isCourseTest = item.course_test;
+    const title = isCourseTest ? item.course?.course_name : item.lesson?.lesson_name;
+    const description = isCourseTest ? item.course?.description : item.lesson?.description;
     const score = item.score ? `${item.score.toFixed(2)}/100` : 'Chưa có điểm';
 
     return (
@@ -95,7 +89,7 @@ const Home = () => {
             <p className="text-gray-600">{description}</p>
             <div className="mt-2">
               <Tag color={item.status === 1 ? 'success' : 'processing'}>
-                {item.status === 1 ? 'Hoàn thành' : 'Đang học'}
+                {item.status === 1 ? 'Đã hoàn thành' : 'Đang thi'}
               </Tag>
               {item.status === 1 && (
                 <Tag color="blue" className="ml-2">
@@ -104,9 +98,16 @@ const Home = () => {
               )}
             </div>
           </div>
-          <div className="text-gray-500 text-sm">
-            <ClockIcon className="mr-1" />
-            {new Date(item.created_at).toLocaleDateString()}
+          <div className="flex flex-col items-end">
+            <div className="text-gray-500 text-sm mb-2">
+              <ClockIcon className="mr-1" />
+              {new Date(item.created_at).toLocaleDateString()}
+            </div>
+            {item.status === 0 && (
+              <Button type="primary" onClick={() => handleTestClick(item)}>
+                Tiếp tục thi
+              </Button>
+            )}
           </div>
         </div>
       </Card>
@@ -116,29 +117,20 @@ const Home = () => {
   return (
     <div>
       {contextHolder}
-      <div className="mb-8">
-        <Select
-          defaultValue="all"
-          style={{ width: 200 }}
-          onChange={setFilter}
-        >
-          {categories.map(category => (
-            <Option key={category.value} value={category.value}>
-              {category.label}
-            </Option>
-          ))}
-        </Select>
-      </div>
-
+      
     
+
+      <div className="mb-8">
+        <Title level={2}>Khóa học</Title>
+      </div>
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <Spin size="large" tip="Loading courses..." />
         </div>
-      ) : filteredCourses.length > 0 ? (
+      ) : courses.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredCourses.map(course => (
+          {courses.map(course => (
             <div 
               key={course.id}
               className="group relative overflow-hidden rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl"
@@ -184,19 +176,20 @@ const Home = () => {
       )}
         {isLoggedIn && (
         <div className="mt-8">
+          <Title level={2} className="mt-8">Bài thi của tôi</Title>
           <Tabs defaultActiveKey="1">
-            <TabPane tab="Khóa học đang học" key="1">
-              {inProgressItems.length > 0 ? (
-                inProgressItems.map(renderTrackingItem)
+            <TabPane tab="Bài thi đang làm" key="1">
+              {inProgressTests.length > 0 ? (
+                inProgressTests.map(renderTestItem)
               ) : (
-                <Empty description="Bạn chưa có khóa học nào đang học" />
+                <Empty description="Bạn chưa có bài thi nào đang làm" />
               )}
             </TabPane>
-            <TabPane tab="Khóa học đã hoàn thành" key="2">
-              {completedItems.length > 0 ? (
-                completedItems.map(renderTrackingItem)
+            <TabPane tab="Bài thi đã hoàn thành" key="2">
+              {completedTests.length > 0 ? (
+                completedTests.map(renderTestItem)
               ) : (
-                <Empty description="Bạn chưa hoàn thành khóa học nào" />
+                <Empty description="Bạn chưa hoàn thành bài thi nào" />
               )}
             </TabPane>
           </Tabs>
