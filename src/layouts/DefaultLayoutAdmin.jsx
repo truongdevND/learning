@@ -22,7 +22,7 @@ const DefaultLayoutAdmin = ({ children }) => {
         <SidebarComponent collapsed={sidebarCollapsed} onCollapse={setSidebarCollapsed} />
         
         <Layout>
-          <Content >
+          <Content  className='p-4'>
             {children}
           </Content>
           

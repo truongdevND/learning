@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Collapse, Button, Space, Divider, Avatar, Spin, message, Progress } from 'antd';
+import React, { useState, useEffect, useRef } from 'react';
+import { Card, Collapse, Button, Space, Divider, Avatar, Spin, message, Progress, Table, Tag } from 'antd';
 import { 
   ClockCircleOutlined, 
   UserOutlined, 
@@ -10,9 +10,9 @@ import {
 import { useParams, useNavigate } from 'react-router-dom';
 import courseService from '../../services/courseService';
 import testService from '../../services/testService';
+import useNotificationStore from '../../stores/useNotificationStore';
 
 const { Panel } = Collapse;
-message.error('Failed to load lesson media');
 
 const CourseDetail = () => {
   const [activeLesson, setActiveLesson] = useState(null);
@@ -22,10 +22,11 @@ const CourseDetail = () => {
   const [completedLessons, setCompletedLessons] = useState([]);
   const { id } = useParams();
   const navigate = useNavigate();
+  const lessonContentRef = useRef(null);
+  const { showError } = useNotificationStore();
 
   useEffect(() => {
     fetchDataCourseDetail(id);
-    // Load completed lessons from localStorage
     const completed = JSON.parse(localStorage.getItem(`completedLessons_${id}`) || '[]');
     setCompletedLessons(completed);
   }, [id]);
@@ -38,7 +39,7 @@ const CourseDetail = () => {
       setCourse(course);
       setLessons(lessons);
     } catch (e) {
-      message.error('Failed to fetch course details');
+      showError('Failed to fetch course details');
       console.error(e);
     } finally {
       setLoading(false);
@@ -64,12 +65,12 @@ const CourseDetail = () => {
       const resp = await testService.createTest(param);
       
       if (resp.data && resp.data.test_id) {
-        navigate(`/course/${id}/lesson/${lesson.id}/test/${resp.data.test_id}`);
+        navigate(`/test/${resp.data.test_id}`);
       } else {
-        message.error('Failed to create test');
+        showError('Failed to create test');
       }
     } catch (e) {
-      message.error('Failed to create test');
+      showError('Failed to create test');
       console.error(e);
     }
   };
@@ -83,8 +84,13 @@ const CourseDetail = () => {
         lesson_video: videoUrl,
         img: imageUrl
       });
-    } catch (errorInfo) {
-      message.error('Failed to load lesson media');
+      setTimeout(() => {
+        if (lessonContentRef.current) {
+          lessonContentRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    } catch {
+      showError('Failed to load lesson media');
     }
   };
 
@@ -134,13 +140,6 @@ const CourseDetail = () => {
         <div className="lg:col-span-1">
           <Card className="shadow-lg">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold text-blue-600">Free</span>
-                <Button type="primary" size="large">Đăng ký học</Button>
-              </div>
-
-              <Divider />
-
               <div className="space-y-2">
                 <div className="flex items-center">
                   <ClockCircleOutlined className="text-gray-500 mr-2" />
@@ -149,15 +148,6 @@ const CourseDetail = () => {
                 <div className="flex items-center">
                   <FileTextOutlined className="text-gray-500 mr-2" />
                   <span>{lessons.length} bài học</span>
-                </div>
-              </div>
-
-              <Divider />
-
-              <div className="flex items-center space-x-4">
-                <Avatar size={64} icon={<UserOutlined />} />
-                <div>
-                  <h3 className="font-semibold">Instructor</h3>
                 </div>
               </div>
             </div>
@@ -172,46 +162,69 @@ const CourseDetail = () => {
       </div>
 
       {/* Lessons List */}
-      <div className="mb-8">
+      <div className="mb-8 ">
         <h2 className="text-2xl font-bold mb-4">Nội dung khóa học</h2>
-        <Collapse accordion>
-          {lessons.map((lesson) => (
-            <Panel
-              key={lesson.id}
-              header={
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    {completedLessons.includes(lesson.id) ? (
-                      <CheckCircleOutlined className="text-green-500 mr-2" />
-                    ) : (
-                      <PlayCircleOutlined className="text-blue-500 mr-2" />
-                    )}
-                    <span>{lesson.lesson_name}</span>
-                  </div>
-                  {completedLessons.includes(lesson.id) && (
-                    <Progress type="circle" percent={100} width={20} />
-                  )}
-                </div>
-              }
-            >
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="mb-4">{lesson.description}</p>
-                <Button 
-                  type="primary" 
+        <Table
+          columns={[
+            {
+              title: 'STT',
+              dataIndex: 'index',
+              key: 'index',
+              width: 60,
+              render: (_, __, idx) => idx + 1,
+            },
+            {
+              title: 'Tên bài học',
+              dataIndex: 'lesson_name',
+              key: 'lesson_name',
+              render: (text) => (
+                <span className="font-semibold">{text}</span>
+              ),
+            },
+            {
+              title: 'Mô tả',
+              dataIndex: 'description',
+              key: 'description',
+              ellipsis: true,
+            },
+            {
+              title: 'Trạng thái',
+              key: 'status',
+              width: 120,
+              render: (_, record) => (
+                completedLessons.includes(record.id) ? (
+                  <Tag color="green">Đã hoàn thành</Tag>
+                ) : (
+                  <Tag color="blue">Chưa hoàn thành</Tag>
+                )
+              ),
+            },
+            {
+              title: 'Action',
+              key: 'action',
+              width: 120,
+              render: (_, record) => (
+                <Button
+                  type="primary"
                   icon={<PlayCircleOutlined />}
-                  onClick={() => handleLessonClick(lesson)}
+                  onClick={() => handleLessonClick(record)}
                 >
                   Xem bài học
                 </Button>
-              </div>
-            </Panel>
-          ))}
-        </Collapse>
+              ),
+            },
+          ]}
+          dataSource={lessons}
+          rowKey="id"
+          pagination={false}
+          locale={{ emptyText: 'Không có bài học nào.' }}
+          className="bg-white rounded shadow w-full"
+        />
       </div>
 
       {/* Lesson Content (when a lesson is selected) */}
       {activeLesson && (
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div ref={lessonContentRef} className="bg-white rounded-lg shadow-lg p-6">
           <h3 className="text-xl font-bold mb-4">{activeLesson.lesson_name}</h3>
           <div className="aspect-w-16 aspect-h-9 mb-4">
             {activeLesson.lesson_video ? (

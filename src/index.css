@@ -1,7 +1,2 @@
 @import "tailwindcss";
 
-@theme {
-    --color-primary: #000;
-    --color-second: #3ab7bf;
-    --color-bermuda: #78dcca;
-  }

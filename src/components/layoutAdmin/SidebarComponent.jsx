@@ -2,16 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Layout, Menu } from 'antd';
 import { 
   HomeOutlined, 
-  AppstoreOutlined, 
-  TeamOutlined, 
-  FileOutlined,
   UserOutlined,
-  SettingOutlined,
-  BarChartOutlined,
-  MessageOutlined,
-  ShoppingOutlined,
-  MailOutlined,
-  CalendarOutlined
+  ReadOutlined,
+  BookOutlined,
 } from '@ant-design/icons';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -34,75 +27,32 @@ const SidebarComponent = ({ collapsed, }) => {
     <Sider 
       trigger={null}
       collapsible 
+      style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #e0e7ff 100%)',boxShadow: '2px 0 16px 0 rgba(51,88,224,0.07)' }}
       collapsed={collapsed}
       width={256}
-      className="overflow-auto h-screen fixed left-0 top-0 z-10  shadow-md"
+      className="overflow-auto h-screen fixed left-0 top-0 z-10 shadow-xl"
       theme="light"
     >
-      <div className="pt-4">
-        <Menu
-          mode="inline"
-          selectedKeys={selectedKeys}
-          defaultOpenKeys={['sub1']}
-          style={{ borderRight: 0 }}
-        >
-          <Menu.Item key="dashboard" icon={<HomeOutlined />}>
-            <Link to="/dashboard">Bảng điều khiển</Link>
-          </Menu.Item>
-          
-          <SubMenu key="sub1" icon={<AppstoreOutlined />} title="Ứng dụng">
-            <Menu.Item key="calendar" icon={<CalendarOutlined />}>
-              <Link to="/calendar">Lịch</Link>
-            </Menu.Item>
-            <Menu.Item key="email" icon={<MailOutlined />}>
-              <Link to="/email">Email</Link>
-            </Menu.Item>
-            <Menu.Item key="chat" icon={<MessageOutlined />}>
-              <Link to="/chat">Trò chuyện</Link>
-            </Menu.Item>
-          </SubMenu>
-          
-          <Menu.Item key="analytics" icon={<BarChartOutlined />}>
-            <Link to="/analytics">Phân tích</Link>
-          </Menu.Item>
-          
-          <Menu.Item key="products" icon={<ShoppingOutlined />}>
-            <Link to="/products">Sản phẩm</Link>
-          </Menu.Item>
-          
-          <Menu.Item key="customers" icon={<TeamOutlined />}>
-            <Link to="/customers">Khách hàng</Link>
-          </Menu.Item>
-          
-          <Menu.Item key="files" icon={<FileOutlined />}>
-            <Link to="/files">Tệp</Link>
-          </Menu.Item>
-          
-          <Menu.Divider />
-          
-          <Menu.Item key="profile" icon={<UserOutlined />}>
-            <Link to="/profile">Hồ sơ</Link>
-          </Menu.Item>
-          
-          <Menu.Item key="settings" icon={<SettingOutlined />}>
-            <Link to="/settings">Cài đặt</Link>
-          </Menu.Item>
-        </Menu>
-      </div>
-      
-      <div className="absolute bottom-0 left-0 right-0 p-4">
-        {!collapsed && (
-          <div className="bg-blue-50 rounded-lg p-4">
-            <h3 className="text-blue-600 font-medium mb-2">Cần trợ giúp?</h3>
-            <p className="text-gray-600 text-sm mb-3">Liên hệ với đội ngũ hỗ trợ của chúng tôi</p>
-            <Link to="/support">
-              <button className="bg-blue-600 text-white text-sm font-medium w-full py-2 rounded-md hover:bg-blue-700 transition-colors">
-                Liên hệ hỗ trợ
-              </button>
-            </Link>
-          </div>
-        )}
-      </div>
+     
+      <Menu
+        mode="inline"
+        selectedKeys={selectedKeys}
+        defaultOpenKeys={['sub1']}
+        style={{ borderRight: 0, background:'transparent', display:'flex',flexDirection:'column', gap:'8px', fontWeight:500, marginTop:"20px"}}
+      >
+        <Menu.Item key="dashboard" icon={<HomeOutlined style={{fontSize:22}} />} style={{height:'80px', borderRadius:10, margin:'0 8px'}} className="hover:bg-blue-100/60 transition-all">
+          <Link to="/admin">Bảng điều khiển</Link>
+        </Menu.Item>
+        <Menu.Item key="user" icon={<UserOutlined style={{fontSize:22}} />} style={{height:'80px', borderRadius:10, margin:'0 8px'}} className="hover:bg-blue-100/60 transition-all">
+          <Link to="/admin/user">Quản lý tài khoản</Link>
+        </Menu.Item>
+        <Menu.Item key="course" icon={<BookOutlined style={{fontSize:22}} />} style={{height:'80px', borderRadius:10, margin:'0 8px'}} className="hover:bg-blue-100/60 transition-all">
+          <Link to="/admin/course">Quản lý khóa học</Link>
+        </Menu.Item>
+        <Menu.Item key="customers" icon={<ReadOutlined style={{fontSize:22}} />} style={{height:'80px', borderRadius:10, margin:'0 8px'}} className="hover:bg-blue-100/60 transition-all">
+          <Link to="/admin/test">Quản lý Bài test</Link>
+        </Menu.Item>
+      </Menu>
     </Sider>
   );
 };

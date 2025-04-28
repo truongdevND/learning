@@ -6,6 +6,11 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
   const currentPath = location.pathname;
   const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
 
+  // Nếu là Admin và không phải route /admin thì chuyển hướng về /admin
+  if (user && user.role === 'Admin' && !currentPath.startsWith('/admin')) {
+    return <Navigate to="/admin" replace />;
+  }
+
   // Check if route is guest-only and user is logged in
   if (isGuestOnly(currentPath)) {
     if (user) {

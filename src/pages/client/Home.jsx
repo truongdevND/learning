@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Tag, Space, Empty, Spin, Tabs, Button, Typography } from 'antd';
-import { ClockCircleOutlined, UserOutlined, CheckCircleOutlined, ClockCircleOutlined as ClockIcon } from '@ant-design/icons';
+import { ClockCircleOutlined, ClockCircleOutlined as ClockIcon } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
 import courseService from '../../services/courseService';
 import useNotificationStore from '../../stores/useNotificationStore';
 import { message } from 'antd';
 import userService from '../../services/userService';
 import authService from '../../services/authService';
+import testService from '../../services/testService';
 
 const { Title } = Typography;
 const { TabPane } = Tabs;
@@ -36,7 +37,36 @@ const Home = () => {
     try {
       const response = await userService.getTrackingUser({ user_id: userId });
       if (response.data) {
-        setTrackingData(response.data);
+        const processedData = await Promise.all(response.data.map(async (item) => {
+          if (item.status === 0 && (item.id )) {
+            const now = new Date();
+            const finishedAt = new Date(item.finished_at);
+            
+            if (now > finishedAt) {
+              try {
+                const param = {
+                  id: item.id,
+                  user_id: userId,
+                  score: 0
+                };
+                console.log(item.finished_at);
+                
+                await testService.submitTest(param);
+                return {
+                  ...item,
+                  status: 2, 
+                  score: 0
+                };
+              } catch (error) {
+                console.error('Error updating expired test score:', error);
+                return item;
+              }
+            }
+          }
+          return item;
+        }));
+        
+        setTrackingData(processedData);
       }
     } catch (error) {
       console.error('Error fetching tracking data:', error);
@@ -60,18 +90,33 @@ const Home = () => {
     }
   };
 
+
+
   useEffect(() => {
     fetchDataCourse();
   }, [currentPage, keySearch]);
 
   const inProgressTests = trackingData.filter(item => item.status === 0 && (item.lesson_test || item.course_test));
-  const completedTests = trackingData.filter(item => item.status === 1 && (item.lesson_test || item.course_test));
+  const completedTests = trackingData.filter(item => (item.status === 1 || item.status === 2) && (item.lesson_test || item.course_test));
 
   const handleTestClick = (item) => {
-    if (item.lesson_test) {
-      navigate(`/course/${item.course?.id}/lesson/${item.lesson?.id}/test/${item.object_id}`);
-    } else if (item.course_test) {
-      navigate(`/course/${item.course?.id}/test/${item.object_id}`);
+    if (item.status === 0) {
+     
+        navigate(`/test/${item.id}`);
+      
+    }
+  };
+
+  const getStatusTag = (status) => {
+    switch (status) {
+      case 0:
+        return <Tag color="processing">Đang thi</Tag>;
+      case 1:
+        return <Tag color="success">Đã hoàn thành (Pass)</Tag>;
+      case 2:
+        return <Tag color="error">Đã hoàn thành (Fail)</Tag>;
+      default:
+        return <Tag color="default">Không xác định</Tag>;
     }
   };
 
@@ -79,7 +124,10 @@ const Home = () => {
     const isCourseTest = item.course_test;
     const title = isCourseTest ? item.course?.course_name : item.lesson?.lesson_name;
     const description = isCourseTest ? item.course?.description : item.lesson?.description;
-    const score = item.score ? `${item.score.toFixed(2)}/100` : 'Chưa có điểm';
+    const score = item.score !== null ? `${item.score.toFixed(2)}/100` : 'Chưa có điểm';
+    const now = new Date();
+    const finishedAt = new Date(item.finished_at);
+    const isExpired = now > finishedAt;
 
     return (
       <Card key={item.id} className="mb-4">
@@ -88,14 +136,21 @@ const Home = () => {
             <h3 className="text-lg font-semibold">{title}</h3>
             <p className="text-gray-600">{description}</p>
             <div className="mt-2">
-              <Tag color={item.status === 1 ? 'success' : 'processing'}>
-                {item.status === 1 ? 'Đã hoàn thành' : 'Đang thi'}
-              </Tag>
-              {item.status === 1 && (
+              {getStatusTag(item.status, item.score)}
+              {item.status !== 0 && (
                 <Tag color="blue" className="ml-2">
                   Điểm: {score}
                 </Tag>
               )}
+              {isExpired && item.status === 0 && (
+                <Tag color="error" className="ml-2">
+                  Đã hết thời gian
+                </Tag>
+              )}
+            </div>
+            <div className="mt-2 text-sm text-gray-500">
+              <div>Bắt đầu: {new Date(item.created_at).toLocaleString('vi-VN', { hour12: false })}</div>
+              <div>Kết thúc: {new Date(item.finished_at).toLocaleString('vi-VN', { hour12: false })}</div>
             </div>
           </div>
           <div className="flex flex-col items-end">
@@ -103,7 +158,7 @@ const Home = () => {
               <ClockIcon className="mr-1" />
               {new Date(item.created_at).toLocaleDateString()}
             </div>
-            {item.status === 0 && (
+            {item.status === 0 && !isExpired && (
               <Button type="primary" onClick={() => handleTestClick(item)}>
                 Tiếp tục thi
               </Button>
@@ -115,11 +170,9 @@ const Home = () => {
   };
 
   return (
-    <div>
+    <div className="container">
       {contextHolder}
       
-    
-
       <div className="mb-8">
         <Title level={2}>Khóa học</Title>
       </div>
@@ -174,18 +227,19 @@ const Home = () => {
           />
         </div>
       )}
-        {isLoggedIn && (
-        <div className="mt-8">
+      
+      {isLoggedIn && (
+        <div className="mt-8 ">
           <Title level={2} className="mt-8">Bài thi của tôi</Title>
-          <Tabs defaultActiveKey="1">
-            <TabPane tab="Bài thi đang làm" key="1">
+          <Tabs defaultActiveKey="1" >
+            <TabPane tab="Bài thi đang làm" key="1" className='h-[700px] overflow-auto'>
               {inProgressTests.length > 0 ? (
                 inProgressTests.map(renderTestItem)
               ) : (
                 <Empty description="Bạn chưa có bài thi nào đang làm" />
               )}
             </TabPane>
-            <TabPane tab="Bài thi đã hoàn thành" key="2">
+            <TabPane tab="Bài thi đã hoàn thành" key="2" className='h-[700px] overflow-auto' >
               {completedTests.length > 0 ? (
                 completedTests.map(renderTestItem)
               ) : (

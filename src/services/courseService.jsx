@@ -1,10 +1,9 @@
 import api from './Axios';
 
 const courseService = {
-  // Get all courses
   getCourses: async (param) => {
     try {
-      const { page = 0, pageSize = 10, key } = param || {};
+      const { page = 0, pageSize = 10, key='' } = param || {};
       const response = await api.get(`api/courses?page=${page}&pageSize=${pageSize}&key=${key}`);
       return response;
     } catch (error) {
@@ -12,7 +11,6 @@ const courseService = {
     } 
   },
 
-  // Get a specific course by ID
   getCourseById: async (id) => {
     try {
       const response = await api.get(`/api/courses/${id}`);
@@ -23,10 +21,15 @@ const courseService = {
   },
   createMedia: async (data) => {
     try {
-      const response = await api.get(`/api/media` ,data);
-      return response;
+      const response = await api.post(`/api/media`, data, {
+        headers: {
+          'Content-Type': 'multipart/form-data'  
+        }
+      });
+      return response.data;
     } catch (error) {
       console.error(error);
+      throw error;  
     }
   },
   getMedia: async (link) => {
@@ -56,7 +59,6 @@ getLessonTest:async (link) => {
     }
   },
 
-  // Update an existing course
   updateCourse: async (id, courseData) => {
     try {
       const response = await api.put(`/api/courses/${id}`, courseData);
@@ -66,10 +68,37 @@ getLessonTest:async (link) => {
     }
   },
 
-  // Delete a course
+ 
   deleteCourse: async (id) => {
     try {
       const response = await api.delete(`/api/courses/${id}`);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  },
+
+  createLesson: async (lessonData) => {
+    try {
+      const response = await api.post('/api/lessons', lessonData);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  },
+
+  getLessonById: async (id) => {
+    try {
+      const response = await api.get(`/api/lessons/${id}`);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  },
+
+  updateLesson: async (id, lessonData) => {
+    try {
+      const response = await api.put(`/api/lessons/${id}`, lessonData);
       return response;
     } catch (error) {
       console.error(error);

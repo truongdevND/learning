@@ -18,6 +18,7 @@ import {
   TrophyOutlined,
 } from "@ant-design/icons";
 import testService from "../../services/testService";
+import useNotificationStore from '../../stores/useNotificationStore';
 
 const { Title, Text } = Typography;
 
@@ -25,7 +26,7 @@ const LessonTest = () => {
   const [allQuestions, setAllQuestions] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(null); 
+  const [timeLeft, setTimeLeft] = useState(null);
   const [loading, setLoading] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
   const [testCompleted, setTestCompleted] = useState(false);
@@ -35,12 +36,13 @@ const LessonTest = () => {
   const [endTime, setEndTime] = useState(null);
   const { testId } = useParams();
   const navigate = useNavigate();
+  const { showError } = useNotificationStore();
 
   useEffect(() => {
     fetchTestQuestions();
-    
+
     const storedAnswers = localStorage.getItem(`test_answers_${testId}`);
-    
+
     if (storedAnswers) {
       try {
         setSelectedAnswers(JSON.parse(storedAnswers));
@@ -56,9 +58,9 @@ const LessonTest = () => {
         const now = new Date();
         const end = new Date(endTime);
         const remainingSeconds = Math.max(0, Math.floor((end - now) / 1000));
-        
+
         setTimeLeft(remainingSeconds);
-        
+
         if (remainingSeconds <= 0) {
           clearInterval(timer);
           handleSubmit();
@@ -71,31 +73,33 @@ const LessonTest = () => {
 
   useEffect(() => {
     if (Object.keys(selectedAnswers).length > 0) {
-      localStorage.setItem(`test_answers_${testId}`, JSON.stringify(selectedAnswers));
+      localStorage.setItem(
+        `test_answers_${testId}`,
+        JSON.stringify(selectedAnswers)
+      );
     }
   }, [selectedAnswers, testId]);
 
   const fetchTestQuestions = async () => {
     try {
       setLoading(true);
-      const user = JSON.parse(localStorage.getItem('user'));
+      const user = JSON.parse(localStorage.getItem("user"));
 
       const param = {
         id: testId,
-        user_id: user.user_id
+        user_id: user.user_id,
       };
-      
+
       const response = await testService.getTest(param);
-      
+
       if (response.data) {
         setStartTime(response.data.start_time);
         setEndTime(response.data.end_time);
         setAllQuestions(response.data.questions_response.questions || []);
         setTotalQuestions(response.data.questions_response.total_elements || 0);
       }
-      
     } catch (error) {
-      message.error("Failed to load test questions");
+      showError("Failed to load test questions");
       console.error("Error fetching questions:", error);
     } finally {
       setLoading(false);
@@ -112,9 +116,9 @@ const LessonTest = () => {
 
   const calculateScore = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem('user'));
+      const user = JSON.parse(localStorage.getItem("user"));
       let correctAnswers = 0;
-      
+
       allQuestions.forEach((question) => {
         const selectedAnswer = selectedAnswers[question.id];
         const correctAnswer = question.answers.find((answer) => answer.correct);
@@ -122,19 +126,19 @@ const LessonTest = () => {
           correctAnswers++;
         }
       });
-      
+
       const score = (correctAnswers / allQuestions.length) * 100;
-      
+
       const param = {
         id: testId,
         user_id: user.user_id,
-        score: score
+        score: score,
       };
-      
+
       await testService.submitTest(param);
       return score;
     } catch (error) {
-      message.error("Failed to calculate score");
+      showError("Failed to calculate score");
       console.error("Error submitting test:", error);
       return 0;
     }
@@ -146,10 +150,12 @@ const LessonTest = () => {
       const finalScore = await calculateScore();
       setScore(finalScore);
       setTestCompleted(true);
-      
+
       localStorage.removeItem(`test_answers_${testId}`);
     } catch (error) {
-      message.error("Failed to submit test");
+      showError("Failed to submit test");
+      console.error("Error submitting test:", error);
+
     } finally {
       setLoading(false);
     }
@@ -208,10 +214,7 @@ const LessonTest = () => {
   if (initialLoading) {
     return (
       <div className="flex justify-center items-center  ">
-       
-            <Spin size="large" />
-          
-        
+        <Spin size="large" />
       </div>
     );
   }
@@ -240,39 +243,31 @@ const LessonTest = () => {
 
             <div className="mb-10">
               <Text className="text-xl block mb-3">
-                You scored{" "}
+                Điểm của bạn{" "}
                 <span
                   className="font-bold"
                   style={{ color: getScoreColor(score) }}
                 >
-                  {score.toFixed(1)}%
+                  {score.toFixed(1)} điểm
                 </span>
               </Text>
               <Text className="text-gray-600 text-lg">
                 {score >= 80
-                  ? "Excellent work! Keep up the great effort!"
+                  ? "Làm rất tốt! Hãy tiếp tục phát huy nhé!"
                   : score >= 60
-                  ? "Good effort! With a bit more practice, you'll master this topic."
-                  : "Keep practicing! You'll improve with more study."}
+                  ? "Nỗ lực tốt! Chỉ cần luyện tập thêm một chút, bạn sẽ thành thạo chủ đề này."
+                  : "Tiếp tục luyện tập nhé! Bạn sẽ tiến bộ nhiều hơn nữa."}
               </Text>
             </div>
 
             <Space size="large" className="mt-4">
               <Button
-                type="primary"
                 size="large"
-                onClick={() => navigate(-1)}
-                icon={<ArrowLeftOutlined />}
-                className="px-8 h-12 rounded-lg text-base"
+                onClick={() => navigate("/")}
+                style={{ background: "#1890ff", color: "#ffff" }}
+                className="bg-primary text-white px-8 h-12 rounded-lg text-base"
               >
-                Back to Lesson
-              </Button>
-              <Button
-                size="large"
-                onClick={() => navigate("/courses")}
-                className="px-8 h-12 rounded-lg text-base"
-              >
-                All Courses
+                Trở về trang Home
               </Button>
             </Space>
           </div>
@@ -283,24 +278,27 @@ const LessonTest = () => {
 
   if (!allQuestions || allQuestions.length === 0) {
     return (
-      <div className="flex justify-center items-center min-h-screen ">
-        <Card className="w-full max-w-2xl shadow-lg rounded-xl overflow-hidden">
-          <div className="text-center p-12">
-            <Title level={3} className="mt-6">
-              No test questions available
-            </Title>
-            <Text className="text-gray-500">
-              Please try again later or contact support
-            </Text>
+      <div className="flex justify-center items-center mt-[200px] ">
+        <div className="w-full ">
+          <div className=" flex flex-col gap-[50px] justify-center items-center text-center">
+            <div className="flex flex-col gap-5 ">
+              <div className=" text-3xl">
+                Không có câu hỏi kiểm tra nào
+              </div>
+              <div className="text-gray-500">
+                Vui lòng thử lại sau hoặc liên hệ với bộ phận hỗ trợ              
+              </div>
+            </div>
+
             <Button
               type="primary"
-              className="mt-6"
-              onClick={() => navigate(-1)}
+              className=" w-[200px]"
+              onClick={() => navigate("/")}
             >
-              Back to Lesson
+              Trở về trang home
             </Button>
           </div>
-        </Card>
+        </div>
       </div>
     );
   }
@@ -326,7 +324,7 @@ const LessonTest = () => {
             </Text>
           </div>
         </div>
-        
+
         <div className="flex justify-center items-center p-24">
           <Spin size="large" />
           <Text className="ml-4">Loading questions...</Text>
@@ -360,7 +358,8 @@ const LessonTest = () => {
             <div className="flex items-center bg-green-50 px-3 py-1 rounded-full">
               <CheckCircleOutlined className="mr-2 text-green-500" />
               <Text strong>
-                {Object.keys(selectedAnswers).length} of {totalQuestions} answered
+                {Object.keys(selectedAnswers).length} of {totalQuestions}{" "}
+                answered
               </Text>
             </div>
           </div>
@@ -398,10 +397,13 @@ const LessonTest = () => {
                       className="answer-option hover:bg-blue-50 hover:border-blue-300 hover:shadow-md"
                     >
                       <Radio value={answer.id} className="w-full">
-                        <Text className="text-base ml-2">{answer.answer_text}</Text>
+                        <Text className="text-base ml-2">
+                          {answer.answer_text}
+                        </Text>
                       </Radio>
 
-                      {selectedAnswers[currentQuestionData?.id] === answer.id && (
+                      {selectedAnswers[currentQuestionData?.id] ===
+                        answer.id && (
                         <div className="absolute top-0 right-0 bg-blue-500 w-6 h-6 flex items-center justify-center rounded-bl-lg">
                           <CheckCircleOutlined className="text-white text-sm" />
                         </div>

@@ -10,28 +10,20 @@ const clientRoutes = [
   {
     path: "/",
     element: (
-      <DefaultLayoutClient>
-        <Outlet />
-      </DefaultLayoutClient>
+      <ProtectedRoute>
+        <DefaultLayoutClient>
+          <Outlet />
+        </DefaultLayoutClient>
+      </ProtectedRoute>
     ),
     errorElement: <NotFound />,
     children: [
       { index: true, element: <Home /> },
-      { 
-        path: "course/:id", 
-        element: (
-          <ProtectedRoute>
-            <CourseDetail />
-          </ProtectedRoute>
-        ) 
+      {
+        path: "course/:id", element: <CourseDetail />,
       },
-      { 
-        path: "course/:id/lesson/:lessonId/test/:testId", 
-        element: (
-          <ProtectedRoute>
-            <LessonTest />
-          </ProtectedRoute>
-        ) 
+      {
+        path: "test/:testId", element: <LessonTest />,
       },
     ],
   },

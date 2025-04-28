@@ -44,7 +44,7 @@ const Header = () => {
   };
 
   return (
-    <header className="w-full bg-white shadow-md py-4 px-6">
+    <header className="w-full bg-white h-[80px] flex items-center justify-center shadow-md py-4 px-6">
       <div className="container mx-auto">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
@@ -57,7 +57,7 @@ const Header = () => {
               <Search
                 placeholder="Tìm kiếm..."
                 onSearch={(value) => console.log(value)}
-                style={{ maxWidth: '500px' }}
+                style={{ width: '400px' }}
               />
             </div>
           </div>

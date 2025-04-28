@@ -7,6 +7,10 @@ export const authMiddleware = (Component, requiredRole = null) => {
     const currentPath = location.pathname;
     const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
 
+    if (user && user.role === 'Admin' && !currentPath.startsWith('/admin')) {
+      return <Navigate to="/admin" replace />;
+    }
+
     if (isAuthRequired(currentPath) && !user) {
       return <Navigate to="/login" replace state={{ from: currentPath }} />;
     }
@@ -43,4 +47,4 @@ export const setUser = (userData) => {
 
 export const clearUser = () => {
   localStorage.removeItem('user');
-}; 
+};

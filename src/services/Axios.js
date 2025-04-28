@@ -35,11 +35,10 @@ instance.interceptors.response.use(
 const api = {
   get: (url, params = {}) => instance.get(url, { params }).then((response) => response.data),
   
-  post: (url, data = {}) => instance.post(url, data).then((response) => response.data),
+  post: (url, data = {}, config = {}) => instance.post(url, data, config).then((response) => response.data),
   
-  put: (url, data = {}) => instance.put(url, data).then((response) => response.data),
+  put: (url, data = {}, config = {}) => instance.put(url, data, config).then((response) => response.data),
   
   delete: (url) => instance.delete(url).then((response) => response.data),
 };
-
 export default api;
