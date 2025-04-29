@@ -190,7 +190,8 @@ const Home = () => {
             >
               <div onClick={() => navigate(`/course/${course.id}`)} className="relative cursor-pointer overflow-hidden">
                 <img  
-                  src={course.img || 'https://files.fullstack.edu.vn/f8-prod/courses/7.png'}
+                  src={`http://localhost:8080/api/media/${course.img}`}
+                 
                   alt={course.course_name}
                   className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-110"
                 />

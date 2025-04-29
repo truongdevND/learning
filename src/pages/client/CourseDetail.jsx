@@ -123,7 +123,8 @@ const CourseDetail = () => {
         <div className="lg:col-span-2">
           <div className="relative rounded-lg overflow-hidden shadow-lg">
             <img 
-              src={course.img || 'https://files.fullstack.edu.vn/f8-prod/courses/7.png'} 
+                              src={`http://localhost:8080/api/media/${course.img}`}
+
               alt={course.course_name}
               className="w-full h-96 object-cover"
             />
