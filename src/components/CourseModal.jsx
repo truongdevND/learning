@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Modal, Button, Form, Input, Upload, Space, Tooltip } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Modal, Button, Form, Input, Upload, Space, Tooltip, Select } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import courseService from '../services/courseService';
 import useNotificationStore from '../stores/useNotificationStore';
@@ -12,11 +12,20 @@ const CourseModal = ({
   form,
   loading = false,
   onCancel,
-  onSubmit
+  onSubmit,
+ 
 }) => {
   const mediaValue = form.getFieldValue('media');
   const [imagePreview, setImagePreview] = useState(mediaValue ? `http://localhost:8080/api/media/${mediaValue}` : null);
   const { showSuccess, showError } = useNotificationStore();
+
+  useEffect(() => {
+    if (mediaValue) {
+      setImagePreview(`http://localhost:8080/api/media/${mediaValue}`);
+    } else {
+      setImagePreview(null);
+    }
+  }, [mediaValue]);
 
   const handleUpload = async ({ file, onSuccess, onError }) => {
     const actualFile = file.originFileObj || file;

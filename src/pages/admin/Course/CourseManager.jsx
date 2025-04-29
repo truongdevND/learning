@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Table, Button, Space, Typography, Form, Input, Card, Divider, Modal } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import courseService from '../../../services/courseService';
 import CourseModal from '../../../components/CourseModal';
 import LessonModal from '../../../components/LessonModal';
 import useNotificationStore from "../../../stores/useNotificationStore";
+import AssignLessonModal from '../../../components/AssignLessonModal';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -23,24 +24,50 @@ function CourseManager() {
   const [submittingCourse, setSubmittingCourse] = useState(false);
   
   const [isLessonModalVisible, setIsLessonModalVisible] = useState(false);
-  const [lessonModalType, setLessonModalType] = useState('create');
   const [lessonForm] = Form.useForm();
   const [submittingLesson, setSubmittingLesson] = useState(false);
-  const [selectedLesson, setSelectedLesson] = useState(null);
-  
+
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [itemToDelete, setItemToDelete] = useState({ id: null, type: null });
   const [deletingItem, setDeletingItem] = useState(false);
 
-  useEffect(() => {
-    fetchCourses();
-  }, []);
+  const [lessonOptions, setLessonOptions] = useState([]);
+  const [selectedLessonIds, setSelectedLessonIds] = useState([]);
 
-  const fetchCourses = async () => {
+  const [isAssignLessonModalVisible, setIsAssignLessonModalVisible] = useState(false);
+
+  const [searchText, setSearchText] = useState("");
+  const [debouncedSearchText, setDebouncedSearchText] = useState("");
+  const searchDebounceRef = useRef();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCourses, setTotalCourses] = useState(0);
+
+  // Filtered courses based on search text
+  const filteredCourses = courses.filter(course =>
+    course.course_name.toLowerCase().includes(searchText.toLowerCase()) ||
+    (course.description && course.description.toLowerCase().includes(searchText.toLowerCase()))
+  );
+
+  // Debounce searchText
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      setDebouncedSearchText(searchText);
+    }, 400);
+    return () => clearTimeout(searchDebounceRef.current);
+  }, [searchText]);
+
+  useEffect(() => {
+    fetchCourses({ page: currentPage - 1, pageSize, key: debouncedSearchText });
+  }, [debouncedSearchText, currentPage, pageSize]);
+
+  const fetchCourses = async (param = {}) => {
     setLoading(true);
     try {
-      const res = await courseService.getCourses();
+      const res = await courseService.getCourses(param);
       setCourses(res.data?.courses || []);
+      setTotalCourses(res.data?.total || 0);
     } catch {
       console.error("Failed to fetch courses");
     } finally {
@@ -102,19 +129,50 @@ function CourseManager() {
     }
   };
 
-  const showCreateCourseModal = () => {
+  const showCreateCourseModal = async () => {
     courseForm.resetFields();
     setCourseModalType('create');
     setIsCourseModalVisible(true);
+    try {
+      const res = await courseService.getLession({ page: 0, pageSize: 1000 });
+      const options = (res.data?.lessons || []).map(lesson => ({
+        label: lesson.lesson_name,
+        value: lesson.id,
+      }));
+      setLessonOptions(options);
+      setSelectedLessonIds([]);
+      courseForm.setFieldsValue({ lesson_ids: [] });
+    } catch {
+      setLessonOptions([]);
+      setSelectedLessonIds([]);
+    }
   };
 
-  const showEditCourseModal = (course) => {
+  const showEditCourseModal = async (course) => {
     courseForm.setFieldsValue({
       course_name: course.course_name,
       description: course.description,
+      media: course.img,
     });
     setCourseModalType('edit');
     setIsCourseModalVisible(true);
+
+    try {
+      const res = await courseService.getLession({ page: 0, pageSize: 1000 });
+      const options = (res.data?.lessons || []).map(lesson => ({
+        label: lesson.lesson_name,
+        value: lesson.id,
+      }));
+      setLessonOptions(options);
+
+      const detail = await courseService.getCourseById(course.id);
+      const assignedIds = (detail.data?.lessons || []).map(l => l.id);
+      setSelectedLessonIds(assignedIds);
+      courseForm.setFieldsValue({ lesson_ids: assignedIds });
+    } catch {
+      setLessonOptions([]);
+      setSelectedLessonIds([]);
+    }
   };
 
   const handleCourseCancel = () => {
@@ -125,14 +183,15 @@ function CourseManager() {
     setSubmittingCourse(true);
     try {
       if (courseModalType === 'create') {
-         await courseService.createCourse(values);
-        fetchCourses()
+        await courseService.createCourse(values);
+        fetchCourses();
         showSuccess("Tạo khóa học mới thành công!");
       } else if (courseModalType === 'edit') {
         await courseService.updateCourse(selectedCourse, values);
-        setCourses(courses.map(c => c.id === selectedCourse ? {...c, ...values} : c));
+        await courseService.updateCoursAssignLesson(selectedCourse, values.lesson_ids);
+        setCourses(courses.map(c => c.id === selectedCourse ? { ...c, ...values } : c));
         if (courseDetail && courseDetail.id === selectedCourse) {
-          setCourseDetail({...courseDetail, ...values});
+          setCourseDetail({ ...courseDetail, ...values });
         }
         showSuccess("Cập nhật khóa học thành công!");
       }
@@ -145,25 +204,8 @@ function CourseManager() {
     }
   };
 
-  const showCreateLessonModal = () => {
-    lessonForm.resetFields();
-    setLessonModalType('create');
-    setIsLessonModalVisible(true);
-  };
-
-  const showEditLessonModal = (lesson) => {
-    setSelectedLesson(lesson.id);
-    lessonForm.setFieldsValue({
-      lesson_name: lesson.lesson_name,
-      description: lesson.description,
-    });
-    setLessonModalType('edit');
-    setIsLessonModalVisible(true);
-  };
-
   const handleLessonCancel = () => {
     setIsLessonModalVisible(false);
-    setSelectedLesson(null);
   };
 
   const handleLessonSubmit = async (values) => {
@@ -171,8 +213,7 @@ function CourseManager() {
     try {
       if (lessonModalType === 'create') {
         const lessonData = {
-          ...values,
-          course_id: selectedCourse
+          ...values
         };
         const res = await courseService.createLesson(lessonData);
         const newLesson = res.data || res;
@@ -181,20 +222,12 @@ function CourseManager() {
           const updatedLessons = [...(courseDetail.lessons || []), newLesson];
           setCourseDetail({...courseDetail, lessons: updatedLessons});
         }
-        
-        showSuccess("Tạo bài học mới thành công!");
-      } else if (lessonModalType === 'edit') {
-        await courseService.updateLesson(selectedLesson, values);
-        if (courseDetail) {
-          const updatedLessons = courseDetail.lessons.map(lesson => 
-            lesson.id === selectedLesson ? {...lesson, ...values} : lesson
-          );
-          setCourseDetail({...courseDetail, lessons: updatedLessons});
+        if (selectedCourse && newLesson.id) {
+          await courseService.updateCoursAssignLesson(selectedCourse, [newLesson.id]);
         }
-        showSuccess("Cập nhật bài học thành công!");
+        showSuccess("Tạo bài học mới thành công!");
       }
       setIsLessonModalVisible(false);
-      setSelectedLesson(null);
     } catch (error) {
       console.error("Failed to submit lesson:", error);
       showError(lessonModalType === 'create' ? 'Tạo bài học thất bại!' : 'Cập nhật bài học thất bại!');
@@ -259,8 +292,21 @@ function CourseManager() {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <Title level={2} className="m-0">Quản lý khóa học</Title>
+      <div className="flex items-center justify-between mb-6 ">
+        <div className="flex items-center gap-4">
+          <Title level={2} className="m-0">Quản lý khóa học</Title>
+          <Input.Search
+            placeholder="Tìm kiếm khóa học..."
+            allowClear
+            value={searchText}
+            onChange={e => {
+              setSearchText(e.target.value);
+              setCurrentPage(1); // Reset to first page on search
+            }}
+            style={{ width: 300 }}
+            className="ml-4"
+          />
+        </div>
         <Button 
           type="primary" 
           icon={<PlusOutlined />} 
@@ -274,39 +320,53 @@ function CourseManager() {
 
       <Table 
         columns={columns} 
-        dataSource={courses} 
+        dataSource={filteredCourses} 
         loading={loading}
         rowKey="id"
         rowClassName={(record) => record.id === selectedCourse ? 'bg-blue-50' : ''}
         onRow={(record) => ({
           onClick: () => handleRowClick(record),
-          className: 'cursor-pointer'
+          className: 'cursor-pointer mr-5'
         })}
-        className="bg-white rounded shadow"
+        className="bg-white   p-6 "
+        pagination={{
+          current: currentPage,
+          pageSize: pageSize,
+          total: totalCourses,
+          showSizeChanger: true,
+          onChange: (page, size) => {
+            setCurrentPage(page);
+            setPageSize(size);
+          },
+          showTotal: (total) => `Tổng ${total} khóa học`,
+        }}
       />
 
       {selectedCourse && (
         <Card 
-          title={<div className="flex items-center justify-between mb-0">
+          title={<div className="flex items-center mt-6 justify-between mb-0">
             <Title level={4} className="mb-0">Chi tiết khóa học</Title>
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
-              size="middle"
-              onClick={showCreateLessonModal}
-              className="bg-blue-500 hover:bg-blue-600"
-            >
-              Thêm bài học
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="default"
+                onClick={() => setIsAssignLessonModalVisible(true)}
+              >
+                Gán bài học
+              </Button>
+            </div>
           </div>}
           className="mt-8 shadow-md"
           loading={detailLoading}
         >
           {courseDetail && (
             <div className="">
-              <div>
-                <Title level={4} className="mb-2">{courseDetail.course_name}</Title>
-                <Paragraph className="text-gray-600">{courseDetail.description}</Paragraph>
+              <div className='flex gap-4'>
+                <img className='w-[200px] h-full object-center'     src={`http://localhost:8080/api/media/${courseDetail.course.img}`} alt="" />
+                <div>
+                <Title level={4} className="mb-2">{courseDetail.course.course_name}</Title>
+                <Paragraph className="text-gray-600">{courseDetail.course.description}</Paragraph>
+                </div>
+               
               </div>
               <Divider />
               <div>
@@ -332,42 +392,12 @@ function CourseManager() {
                       ellipsis: true,
                       width: 300, 
                     },
-                    {
-                      title: 'Action',
-                      key: 'action',
-                      render: (_, record) => (
-                        <Space size="small">
-                          <Button 
-                            type="primary" 
-                            icon={<EditOutlined />} 
-                            className="bg-yellow-500 hover:bg-yellow-600"
-                            onClick={e => {
-                              e.stopPropagation();
-                              showEditLessonModal(record);
-                            }}
-                          >
-                            Sửa
-                          </Button>
-                          <Button 
-                            danger 
-                            icon={<DeleteOutlined />} 
-                            onClick={e => {
-                              e.stopPropagation();
-                              showDeleteConfirm(record.id, 'lesson');
-                            }}
-                          >
-                            Xóa
-                          </Button>
-                        </Space>
-                      ),
-                      width: 100,
-                    },
                   ]}
                   dataSource={courseDetail.lessons || []}
                   rowKey="id"
                   pagination={false}
                   locale={{ emptyText: 'Không có bài học nào.' }}
-                  className="bg-white rounded shadow w-full"
+                  className="bg-white "
                 />
               </div>
             </div>
@@ -405,15 +435,31 @@ function CourseManager() {
         loading={submittingCourse}
         onCancel={handleCourseCancel}
         onSubmit={handleCourseSubmit}
+        lessonOptions={lessonOptions}
+        selectedLessonIds={selectedLessonIds}
+        onLessonChange={ids => {
+          setSelectedLessonIds(ids);
+          courseForm.setFieldsValue({ lesson_ids: ids });
+        }}
       />
 
       <LessonModal
         visible={isLessonModalVisible}
-        type={lessonModalType}
         form={lessonForm}
         loading={submittingLesson}
         onCancel={handleLessonCancel}
         onSubmit={handleLessonSubmit}
+      />
+
+      <AssignLessonModal
+        visible={isAssignLessonModalVisible}
+        onCancel={() => setIsAssignLessonModalVisible(false)}
+        courseId={selectedCourse}
+        onSuccess={() => {
+          setIsAssignLessonModalVisible(false);
+          // Sau khi gán xong, reload lại chi tiết khóa học
+          if (selectedCourse) handleRowClick({ id: selectedCourse });
+        }}
       />
     </div>
   );

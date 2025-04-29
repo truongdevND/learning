@@ -27,10 +27,10 @@ const SidebarComponent = ({ collapsed, }) => {
     <Sider 
       trigger={null}
       collapsible 
-      style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #e0e7ff 100%)',boxShadow: '2px 0 16px 0 rgba(51,88,224,0.07)' }}
+     
       collapsed={collapsed}
       width={256}
-      className="overflow-auto h-screen fixed left-0 top-0 z-10 shadow-xl"
+      className="overflow-auto fixed left-0 top-0 z-10 "
       theme="light"
     >
      
@@ -50,7 +50,7 @@ const SidebarComponent = ({ collapsed, }) => {
           <Link to="/admin/course">Quản lý khóa học</Link>
         </Menu.Item>
         <Menu.Item key="customers" icon={<ReadOutlined style={{fontSize:22}} />} style={{height:'80px', borderRadius:10, margin:'0 8px'}} className="hover:bg-blue-100/60 transition-all">
-          <Link to="/admin/test">Quản lý Bài test</Link>
+          <Link to="/admin/lession">Quản lý Bài bài học</Link>
         </Menu.Item>
       </Menu>
     </Sider>

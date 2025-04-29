@@ -67,6 +67,14 @@ getLessonTest:async (link) => {
       console.error(error);
     }
   },
+  updateCoursAssignLesson: async (id, ids) => {
+    try {
+      const response = await api.put(`/api/courses/${id}/assign/lesson/${ids}`);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  },
 
  
   deleteCourse: async (id) => {
@@ -77,16 +85,32 @@ getLessonTest:async (link) => {
       console.error(error);
     }
   },
-
+  getLession: async (param) => {
+    try {
+      const { page = 0, pageSize = 10, key='' } = param || {};
+      const response = await api.get(`api/course/lessons?page=${page}&pageSize=${pageSize}&key=${key}`);
+      return response;
+    } catch (error) {
+      console.error(error);
+    } 
+  },
   createLesson: async (lessonData) => {
     try {
-      const response = await api.post('/api/lessons', lessonData);
+      const response = await api.post('/api/course/lessons', lessonData);
       return response;
     } catch (error) {
       console.error(error);
     }
   },
-
+ 
+  deleteLesson: async (id) => {
+    try {
+      const response = await api.delete(`/api/course/lessons/${id}`);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  },
   getLessonById: async (id) => {
     try {
       const response = await api.get(`/api/lessons/${id}`);
@@ -99,6 +123,41 @@ getLessonTest:async (link) => {
   updateLesson: async (id, lessonData) => {
     try {
       const response = await api.put(`/api/lessons/${id}`, lessonData);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  },
+
+
+  getQuestion: async (idLesson, page = 0, pageSize = 10 ) => {
+    try {
+     
+      const response = await api.get(`api/course/questions/lesson/${idLesson}?page=${page}&pageSize=${pageSize}`);
+      return response;
+    } catch (error) {
+      console.error(error);
+    } 
+  },
+  createQuestion: async (idLesson, lessonData) => {
+    try {
+      const response = await api.post(`api/course/questions/lesson/${idLesson}`, lessonData);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  },
+  updateQuestion: async (idLesson, lessonData) => {
+    try {
+      const response = await api.put(`api/course/questions/lesson/${idLesson}`, lessonData);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  },
+  deleteLQuestion: async (id) => {
+    try {
+      const response = await api.delete(`/api/course/questions/${id}`);
       return response;
     } catch (error) {
       console.error(error);

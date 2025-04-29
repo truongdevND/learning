@@ -5,7 +5,7 @@ import DefaultLayoutAdmin from "../layouts/DefaultLayoutAdmin.jsx";
 import ProtectedRoute from "../components/ProtectedRoute";
 import UserManager from "../pages/admin/UserManager.jsx";
 import CourseManager from "../pages/admin/Course/CourseManager.jsx";
-import TestManager from "../pages/admin/TestManager.jsx";
+import LessionManager from "../pages/admin/LessionManager.jsx";
 
 
 const adminRoutes = [
@@ -23,7 +23,8 @@ const adminRoutes = [
       { index: true, element: <HomeAdmin /> },
       {  path: "/admin/user",  element: <UserManager /> },
       {  path: "/admin/course",  element: <CourseManager /> },
-      {  path: "/admin/test",  element: <TestManager /> },
+      {  path: "/admin/lession",  element: <LessionManager /> },
+
     ],
   },
 ];
