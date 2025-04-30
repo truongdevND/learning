@@ -11,6 +11,7 @@ import {
   Progress,
   Table,
   Tag,
+  Tabs
 } from "antd";
 import {
   ClockCircleOutlined,
@@ -18,6 +19,8 @@ import {
   PlayCircleOutlined,
   FileTextOutlined,
   CheckCircleOutlined,
+  VideoCameraOutlined,
+  FileOutlined
 } from "@ant-design/icons";
 import { useParams, useNavigate } from "react-router-dom";
 import courseService from "../../services/courseService";
@@ -32,6 +35,7 @@ const CourseDetail = () => {
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [loading, setLoading] = useState(true);
   const [completedLessons, setCompletedLessons] = useState([]);
+  const [activeTab, setActiveTab] = useState("video");
   const { id } = useParams();
   const navigate = useNavigate();
   const lessonContentRef = useRef(null);
@@ -55,6 +59,12 @@ const CourseDetail = () => {
       // If there are lessons, select the first one by default
       if (lessons && lessons.length > 0) {
         setSelectedLesson(lessons[0]);
+        // Set appropriate default tab based on available content
+        if (lessons[0].lesson_video) {
+          setActiveTab("video");
+        } else if (lessons[0].img) {
+          setActiveTab("content");
+        }
       }
     } catch (e) {
       showError("Failed to fetch course details");
@@ -97,6 +107,12 @@ const CourseDetail = () => {
   const handleLessonClick = (lesson) => {
     try {
       setSelectedLesson(lesson);
+      // Set appropriate default tab based on available content
+      if (lesson.lesson_video) {
+        setActiveTab("video");
+      } else if (lesson.img) {
+        setActiveTab("content");
+      }
       setTimeout(() => {
         if (lessonContentRef.current) {
           lessonContentRef.current.scrollIntoView({
@@ -127,6 +143,80 @@ const CourseDetail = () => {
     }
   };
 
+  // Xử lý hiển thị nội dung dựa trên tab
+  const renderLessonContent = () => {
+    if (!selectedLesson) return null;
+
+    if (activeTab === "video" && selectedLesson.lesson_video) {
+      return (
+        <div className="aspect-w-16 aspect-h-9">
+          <video
+            src={`http://localhost:8080/api/media/${selectedLesson.lesson_video}`}
+            className="w-full h-full rounded-lg border"
+            controls
+            onEnded={() => markLessonAsComplete(selectedLesson.id)}
+          />
+        </div>
+      );
+    } else if (activeTab === "content" && selectedLesson.img) {
+      const isPdf = typeof selectedLesson.img === "string" && selectedLesson.img.toLowerCase().endsWith(".pdf");
+      if (isPdf) {
+        return (
+          <iframe
+            src={`http://localhost:8080/api/media/${selectedLesson.img}`}
+            className="w-full h-[600px] rounded-lg border"
+            title="PDF Viewer"
+          />
+        );
+      }
+      return (
+        <img
+          src={`http://localhost:8080/api/media/${selectedLesson.img}`}
+          alt="Lesson"
+          className="w-full object-contain rounded-lg border"
+        />
+      );
+    }
+    
+    return (
+      <div className="w-full h-48 bg-gray-100 flex items-center justify-center rounded-lg">
+        <p className="text-gray-400">Không có nội dung cho tab này</p>
+      </div>
+    );
+  };
+
+  // Tạo các items cho Tabs
+  const getTabItems = () => {
+    const items = [];
+    
+    if (selectedLesson?.lesson_video) {
+      items.push({
+        key: "video",
+        label: (
+          <span className="flex items-center gap-1">
+            <VideoCameraOutlined />
+            Video
+          </span>
+        )
+      });
+    }
+    
+    if (selectedLesson?.img) {
+      const isPdf = typeof selectedLesson.img === "string" && selectedLesson.img.toLowerCase().endsWith(".pdf");
+      items.push({
+        key: "content",
+        label: (
+          <span className="flex items-center gap-1">
+            <FileOutlined />
+            {isPdf ? "Slide" : "Hình ảnh"}
+          </span>
+        )
+      });
+    }
+    
+    return items;
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-96">
@@ -147,7 +237,7 @@ const CourseDetail = () => {
   }
 
   return (
-    <div className="container mx-auto ">
+    <div className="container mx-auto">
       {/* Header: Thông tin khóa học và tiến độ */}
       <div className="bg-white rounded-lg shadow flex flex-col md:flex-row md:items-center md:justify-between p-6 mb-6 gap-4">
         <div className="flex items-center gap-4">
@@ -175,67 +265,50 @@ const CourseDetail = () => {
 
       {/* Main content: 2 cột */}
       <div className="flex flex-col md:flex-row gap-6">
-        {/* Danh sách bài học */}
-        <div className="md:w-1/3 w-full">
+        {/* Danh sách bài học - 1/4 */}
+        <div className="md:w-1/4 w-full">
           <div className="bg-white rounded-lg shadow p-4">
             <h2 className="text-lg font-semibold mb-3 text-gray-800">Nội dung khóa học</h2>
-            <ul className="divide-y divide-gray-200">
+            <ul className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
               {lessons.map((lesson, idx) => (
                 <li
                   key={lesson.id}
-                  className={`py-3 px-2 cursor-pointer rounded transition-all flex items-center gap-2 hover:bg-blue-50 ${selectedLesson && selectedLesson.id === lesson.id ? 'bg-blue-100 border-l-4 border-blue-500 font-semibold' : ''}`}
+                  className={`py-3 px-2 cursor-pointer rounded transition-all flex items-center gap-2 hover:bg-blue-50 ${
+                    selectedLesson && selectedLesson.id === lesson.id
+                      ? "bg-blue-100 border-l-4 border-blue-500 font-semibold"
+                      : ""
+                  }`}
                   onClick={() => handleLessonClick(lesson)}
                 >
                   <span className="w-6 text-gray-500">{idx + 1}.</span>
-                  <span className="flex-1">{lesson.lesson_name}</span>
+                  <span className="flex-1 text-sm">{lesson.lesson_name}</span>
                 </li>
               ))}
             </ul>
           </div>
         </div>
 
-        {/* Nội dung bài học */}
-        <div className="md:w-2/3 w-full">
+        {/* Nội dung bài học - 3/4 */}
+        <div className="md:w-3/4 w-full">
           {selectedLesson && (
             <div ref={lessonContentRef} className="bg-white rounded-lg shadow p-6">
               <h3 className="text-xl font-bold mb-4 text-gray-800">{selectedLesson.lesson_name}</h3>
-              <div className="mb-4 flex flex-col gap-4">
-                {selectedLesson.lesson_video && (
-                  <div className="aspect-w-16 aspect-h-9">
-                    <video
-                      src={`http://localhost:8080/api/media/${selectedLesson.lesson_video}`}
-                      className="w-full h-full rounded-lg border"
-                      controls
-                      onEnded={() => markLessonAsComplete(selectedLesson.id)}
-                    />
-                  </div>
-                )}
-                {selectedLesson.img && (() => {
-                  const isPdf = typeof selectedLesson.img === "string" && selectedLesson.img.toLowerCase().endsWith(".pdf");
-                  if (isPdf) {
-                    return (
-                      <iframe
-                        src={`http://localhost:8080/api/media/${selectedLesson.img}`}
-                        className="w-full h-[600px] rounded-lg border"
-                        title="PDF Viewer"
-                      />
-                    );
-                  }
-                  return (
-                    <img
-                      src={`http://localhost:8080/api/media/${selectedLesson.img}`}
-                      alt="Lesson"
-                      className="w-full  object-contain rounded-lg border"
-                    />
-                  );
-                })()}
-                {/* No media */}
-                {!selectedLesson.lesson_video && !selectedLesson.img && (
-                  <div className="w-full h-48 bg-gray-100 flex items-center justify-center rounded-lg">
-                    <p className="text-gray-400">Không có media cho bài học này</p>
-                  </div>
-                )}
+              
+              {/* Tab Navigation */}
+              {getTabItems().length > 0 && (
+                <Tabs 
+                  activeKey={activeTab} 
+                  onChange={setActiveTab} 
+                  items={getTabItems()}
+                  className="mb-4"
+                />
+              )}
+              
+              {/* Tab Content */}
+              <div className="mb-6">
+                {renderLessonContent()}
               </div>
+              
               <p className="text-gray-700 mb-6 leading-relaxed">{selectedLesson.description}</p>
               <div className="flex justify-end">
                 <Button

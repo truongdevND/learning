@@ -11,7 +11,6 @@ function Home() {
   const [userCount, setUserCount] = useState(0);
   const [courseCount, setCourseCount] = useState(0);
   const [lessonCount, setLessonCount] = useState(0);
-  const [testCount, setTestCount] = useState(0);
 
   useEffect(() => {
     fetchStatistics();
@@ -31,17 +30,6 @@ function Home() {
       // Lấy tổng số bài học
       const lessonRes = await courseService.getLession({ page: 0, pageSize: 1000 });
       setLessonCount(lessonRes.data && lessonRes.data.lesson_list ? lessonRes.data.lesson_list.length : 0);
-
-      // Đếm tổng số bài thi từ tất cả user (gộp lại)
-      let totalTest = 0;
-      if (userRes.data && Array.isArray(userRes.data)) {
-        for (const user of userRes.data) {
-          if (user.tracking && Array.isArray(user.tracking)) {
-            totalTest += user.tracking.length;
-          }
-        }
-      }
-      setTestCount(totalTest);
     } catch {
       message.error('Không thể tải dữ liệu thống kê!');
     } finally {
@@ -54,9 +42,8 @@ function Home() {
     { name: 'Người dùng', value: userCount },
     { name: 'Khóa học', value: courseCount },
     { name: 'Bài học', value: lessonCount },
-    { name: 'Bài thi', value: testCount },
   ];
-  const COLORS = ['#1890ff', '#52c41a', '#722ed1', '#f5222d'];
+  const COLORS = ['#1890ff', '#52c41a', '#722ed1'];
 
   // Dữ liệu cho BarChart
   const barData = [
@@ -65,7 +52,6 @@ function Home() {
       'Người dùng': userCount,
       'Khóa học': courseCount,
       'Bài học': lessonCount,
-      'Bài thi': testCount,
     },
   ];
 
@@ -79,28 +65,22 @@ function Home() {
       ) : (
         <>
         <Row gutter={[24, 24]}>
-          <Col xs={24} sm={12} md={6}>
+          <Col xs={24} sm={12} md={8}>
             <Card className="shadow-lg" bordered={false}>
               <Title level={4}>Tổng số người dùng</Title>
               <div className="text-3xl font-bold text-blue-600">{userCount}</div>
             </Card>
           </Col>
-          <Col xs={24} sm={12} md={6}>
+          <Col xs={24} sm={12} md={8}>
             <Card className="shadow-lg" bordered={false}>
               <Title level={4}>Tổng số khóa học</Title>
               <div className="text-3xl font-bold text-green-600">{courseCount}</div>
             </Card>
           </Col>
-          <Col xs={24} sm={12} md={6}>
+          <Col xs={24} sm={12} md={8}>
             <Card className="shadow-lg" bordered={false}>
               <Title level={4}>Tổng số bài học</Title>
               <div className="text-3xl font-bold text-purple-600">{lessonCount}</div>
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card className="shadow-lg" bordered={false}>
-              <Title level={4}>Tổng số bài thi</Title>
-              <div className="text-3xl font-bold text-red-600">{testCount}</div>
             </Card>
           </Col>
         </Row>
@@ -143,7 +123,6 @@ function Home() {
                   <Bar dataKey="Người dùng" fill="#1890ff" />
                   <Bar dataKey="Khóa học" fill="#52c41a" />
                   <Bar dataKey="Bài học" fill="#722ed1" />
-                  <Bar dataKey="Bài thi" fill="#f5222d" />
                 </BarChart>
               </ResponsiveContainer>
             </Card>

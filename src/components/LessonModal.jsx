@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Modal, Button, Form, Input, Upload, Space } from 'antd';
-import { PlusOutlined, DeleteOutlined, FilePdfOutlined, VideoCameraOutlined } from '@ant-design/icons';
+import { Modal, Button, Form, Input, Upload, Space, Spin } from 'antd';
+import { PlusOutlined, DeleteOutlined, FilePdfOutlined, VideoCameraOutlined, LoadingOutlined } from '@ant-design/icons';
 import courseService from '../services/courseService';
 import useNotificationStore from '../stores/useNotificationStore';
 import { useEffect } from 'react';
 
 const { TextArea } = Input;
+
+// Kích thước giới hạn cho video: 2GB (bytes)
+const MAX_VIDEO_SIZE = 2 * 1024 * 1024 * 1024;
 
 const LessonModal = ({
   visible,
@@ -20,8 +23,11 @@ const LessonModal = ({
   const [imgPreview, setImgPreview] = useState();
   const [videoPreview, setVideoPreview] = useState();
   const { showSuccess, showError } = useNotificationStore();
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+
   useEffect(() => {
-    console.log("imgValue",imgValue);
+    console.log("imgValue", imgValue);
 
     if (imgValue) {
       setImgPreview(`http://localhost:8080/api/media/${imgValue}`);
@@ -31,11 +37,10 @@ const LessonModal = ({
   }, [imgValue]);
 
   useEffect(() => {
-    console.log("videoValue",videoValue);
+    console.log("videoValue", videoValue);
     
     if (videoValue) {
       setVideoPreview(`http://localhost:8080/api/media/${videoValue}`);
-
     } else {
       setVideoPreview(null);
     }
@@ -53,38 +58,49 @@ const LessonModal = ({
     const actualFile = file.originFileObj || file;
     const formData = new FormData();
     formData.append('img', actualFile);
+    
+    setUploadingImg(true);
+    showSuccess('Đang tải ảnh/PDF lên, vui lòng đợi...');
+    
     try {
       const res = await courseService.createMedia(formData);
       if (res) {
         form.setFieldsValue({ img: res });
         setImgPreview(`http://localhost:8080/api/media/${res}`);
-        showSuccess('Tải ảnh/pdf lên thành công!');
+        showSuccess('Tải ảnh/PDF lên thành công!');
         onSuccess && onSuccess(res, file);
       } else {
-        showError('Tải ảnh/pdf thất bại!');
+        showError('Tải ảnh/PDF thất bại!');
         onError && onError(new Error('Upload failed'));
       }
     } catch (err) {
-      showError('Tải ảnh/pdf thất bại!');
+      showError('Tải ảnh/PDF thất bại!');
       onError && onError(err);
+    } finally {
+      setUploadingImg(false);
     }
   };
 
   const handleDeleteImg = () => {
     form.setFieldsValue({ img: undefined });
     setImgPreview(null);
-    showSuccess('Đã xóa ảnh/pdf');
+    showSuccess('Đã xóa ảnh/PDF');
   };
 
   const handleVideoUpload = async ({ file, onSuccess, onError }) => {
     const actualFile = file.originFileObj || file;
-    if (actualFile.size > 524288000) {
-      showError('Video không được vượt quá 500MB!');
+    if (actualFile.size > MAX_VIDEO_SIZE) {
+      showError('Video không được vượt quá 2GB!');
       onError && onError(new Error('File quá lớn'));
       return;
     }
+    
     const formData = new FormData();
     formData.append('img', actualFile); 
+    
+    setUploadingVideo(true);
+    showSuccess('Đang tải video lên, vui lòng đợi...');
+    
     try {
       const res = await courseService.createMedia(formData);
       if (res) {
@@ -99,6 +115,8 @@ const LessonModal = ({
     } catch (err) {
       showError('Tải video thất bại!');
       onError && onError(err);
+    } finally {
+      setUploadingVideo(false);
     }
   };
 
@@ -150,15 +168,20 @@ const LessonModal = ({
         </Form.Item>
         <Form.Item label="Ảnh hoặc PDF">
           {!imgPreview ? (
-            <Upload
-              name="file"
-              customRequest={handleImgUpload}
-              showUploadList={false}
-              accept="image/*,.pdf"
-              maxCount={1}
-            >
-              <Button icon={<PlusOutlined />}>Chọn ảnh hoặc PDF</Button>
-            </Upload>
+            <Spin spinning={uploadingImg} indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />}>
+              <Upload
+                name="file"
+                customRequest={handleImgUpload}
+                showUploadList={false}
+                accept="image/*,.pdf"
+                maxCount={1}
+                disabled={uploadingImg}
+              >
+                <Button icon={<PlusOutlined />} disabled={uploadingImg}>
+                  {uploadingImg ? 'Đang tải lên...' : 'Chọn ảnh hoặc PDF'}
+                </Button>
+              </Upload>
+            </Spin>
           ) : (
             <div className="flex flex-col">
               <div className="flex items-center space-x-2">
@@ -166,18 +189,24 @@ const LessonModal = ({
                   icon={<DeleteOutlined />} 
                   onClick={handleDeleteImg}
                   danger
+                  disabled={uploadingImg}
                 >
                   Xóa
                 </Button>
-                <Upload
-                  name="file"
-                  customRequest={handleImgUpload}
-                  showUploadList={false}
-                  accept="image/*,.pdf"
-                  maxCount={1}
-                >
-                  <Button icon={<PlusOutlined />}>Thay đổi</Button>
-                </Upload>
+                <Spin spinning={uploadingImg} indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />}>
+                  <Upload
+                    name="file"
+                    customRequest={handleImgUpload}
+                    showUploadList={false}
+                    accept="image/*,.pdf"
+                    maxCount={1}
+                    disabled={uploadingImg}
+                  >
+                    <Button icon={<PlusOutlined />} disabled={uploadingImg}>
+                      {uploadingImg ? 'Đang tải lên...' : 'Thay đổi'}
+                    </Button>
+                  </Upload>
+                </Spin>
               </div>
               <div className="mt-3">
                 {imgValue && imgValue.endsWith('.pdf') ? (
@@ -199,22 +228,27 @@ const LessonModal = ({
         </Form.Item>
         <Form.Item label="Video">
           {!videoPreview ? (
-            <Upload
-              name="file"
-              customRequest={handleVideoUpload}
-              showUploadList={false}
-              accept="video/*"
-              maxCount={1}
-              beforeUpload={file => {
-                if (file.size > 524288000) {
-                  showError('Video không được vượt quá 500MB!');
-                  return Upload.LIST_IGNORE;
-                }
-                return true;
-              }}
-            >
-              <Button icon={<PlusOutlined />}>Chọn video</Button>
-            </Upload>
+            <Spin spinning={uploadingVideo} indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />}>
+              <Upload
+                name="file"
+                customRequest={handleVideoUpload}
+                showUploadList={false}
+                accept="video/*"
+                maxCount={1}
+                disabled={uploadingVideo}
+                beforeUpload={file => {
+                  if (file.size > MAX_VIDEO_SIZE) {
+                    showError('Video không được vượt quá 2GB!');
+                    return Upload.LIST_IGNORE;
+                  }
+                  return true;
+                }}
+              >
+                <Button icon={<PlusOutlined />} disabled={uploadingVideo}>
+                  {uploadingVideo ? 'Đang tải lên...' : 'Chọn video'}
+                </Button>
+              </Upload>
+            </Spin>
           ) : (
             <div className="flex flex-col">
               <div className="flex items-center space-x-2">
@@ -222,18 +256,31 @@ const LessonModal = ({
                   icon={<DeleteOutlined />} 
                   onClick={handleDeleteVideo}
                   danger
+                  disabled={uploadingVideo}
                 >
                   Xóa
                 </Button>
-                <Upload
-                  name="file"
-                  customRequest={handleVideoUpload}
-                  showUploadList={false}
-                  accept="video/*"
-                  maxCount={1}
-                >
-                  <Button icon={<PlusOutlined />}>Thay đổi</Button>
-                </Upload>
+                <Spin spinning={uploadingVideo} indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />}>
+                  <Upload
+                    name="file"
+                    customRequest={handleVideoUpload}
+                    showUploadList={false}
+                    accept="video/*"
+                    maxCount={1}
+                    disabled={uploadingVideo}
+                    beforeUpload={file => {
+                      if (file.size > MAX_VIDEO_SIZE) {
+                        showError('Video không được vượt quá 2GB!');
+                        return Upload.LIST_IGNORE;
+                      }
+                      return true;
+                    }}
+                  >
+                    <Button icon={<PlusOutlined />} disabled={uploadingVideo}>
+                      {uploadingVideo ? 'Đang tải lên...' : 'Thay đổi'}
+                    </Button>
+                  </Upload>
+                </Spin>
               </div>
               <div className="mt-3">
                 <video width="200" height="120" controls src={videoPreview} />
@@ -248,4 +295,4 @@ const LessonModal = ({
   );
 };
 
-export default LessonModal; 
+export default LessonModal;
