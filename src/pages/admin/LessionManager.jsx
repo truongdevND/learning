@@ -212,7 +212,7 @@ function LessonManager() {
       ellipsis: true,
     },
     {
-      title: 'Ảnh',
+      title: 'Slide',
       dataIndex: 'img',
       key: 'img',
       width: 100,
