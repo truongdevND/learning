@@ -31,7 +31,15 @@ const userService = {
           throw error; 
         }
       },
-      
+      updateUserRole: async (userId) => {
+        try {
+          const response = await api.post(`/v1/onboard/apply/user/${userId}/admin`);
+          return response;
+        } catch (error) {
+          console.error(error);
+          throw error;
+        }
+      }
     }
 
 export default userService;

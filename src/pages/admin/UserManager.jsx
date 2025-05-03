@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Card, Typography, Tag, Spin, message } from 'antd';
+import { Table, Card, Typography, Tag, Spin, message, Button, Modal } from 'antd';
 import userService from '../../services/userService';
 
 const { Title, Paragraph } = Typography;
@@ -10,6 +10,11 @@ function UserManager() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [tracking, setTracking] = useState([]);
   const [loadingTracking, setLoadingTracking] = useState(false);
+  const [updatingRoleId, setUpdatingRoleId] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({
+    visible: false,
+    userId: null,
+  });
 
   useEffect(() => {
     fetchUsers();
@@ -41,12 +46,62 @@ function UserManager() {
     }
   };
 
+  const handleRoleChange = async () => {
+    const { userId } = confirmModal;
+    setUpdatingRoleId(userId);
+    try {
+      // Always set to role 1 (admin)
+      await userService.updateUserRole(userId, 1);
+      message.success('Đã thăng cấp người dùng lên Admin!');
+      // Update local state
+      setUsers(users.map(user => 
+        user.id === userId ? { ...user, role_course: 1 } : user
+      ));
+      setConfirmModal({ visible: false, userId: null });
+    } catch {
+      message.error('Không thể cập nhật vai trò người dùng!');
+    } finally {
+      setUpdatingRoleId(null);
+    }
+  };
+
+  const showRoleConfirm = (userId) => {
+    setConfirmModal({
+      visible: true,
+      userId
+    });
+  };
+
   const userColumns = [
     { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
     { title: 'Email', dataIndex: 'email', key: 'email' },
     { title: 'Role', dataIndex: 'role_course', key: 'role_course',
       render: (role) => role === 1 ? <Tag color="blue">Admin</Tag> : <Tag color="green">User</Tag>
     },
+    { 
+      title: 'Hành động', 
+      key: 'actions',
+      render: (_, record) => {
+        // Only show promote button for regular users (role_course = 0)
+        if (record.role_course === 0) {
+          return (
+            <Button
+              type="primary"
+              size="small"
+              loading={updatingRoleId === record.id}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent row selection
+                showRoleConfirm(record.id);
+              }}
+            >
+              Thăng cấp lên Admin
+            </Button>
+          );
+        }
+        // For admins, show nothing or a disabled state
+        return <Tag color="blue">Đã là Admin</Tag>;
+      }
+    }
   ];
 
   const trackingColumns = [
@@ -107,6 +162,17 @@ function UserManager() {
           )}
         </Card>
       )}
+
+      <Modal
+        title="Xác nhận thăng cấp người dùng"
+        open={confirmModal.visible}
+        onOk={handleRoleChange}
+        onCancel={() => setConfirmModal({ visible: false, userId: null })}
+        okText="Có"
+        cancelText="Không"
+      >
+        <p>Bạn có chắc muốn thăng cấp người dùng này lên Admin?</p>
+      </Modal>
     </div>
   );
 }
